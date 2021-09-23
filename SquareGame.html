@@ -19,6 +19,7 @@ class SquareGameMove {
  * Represents a given board state of a SquareGame.
  */
 class SquareGameBoard {
+
     /**
      * Creates a new SquareGameBoard with the given row counts.
      * @param {rowCounts} An array containing the number of squares in each row.
@@ -70,7 +71,6 @@ class SquareGameBoard {
             console.log(value);
         }
     }
-
 
     /**
      * Returns the number of rows that this board has.
@@ -234,6 +234,13 @@ class SquareGame {
         }
         return state;
     }
+	
+	/**
+     * Returns the number of moves that have been made during the game.
+     */
+	get moveCount() {
+		return this.pastMoves.length;
+	}
 
     /**
      * Returns whether the game is complete.
