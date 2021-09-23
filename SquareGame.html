@@ -1,4 +1,10 @@
 <script>
+function getRandomInt(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 /**
  * Represents a move during a SquareGame.
  */
@@ -85,13 +91,7 @@ class SquareGameBoard {
      * @param {maxPerRow} The maximum number of squares in each row that the board can have.
      */
     static generateBoard(rows, maxPerRow) {
-        return new SquareGameBoard(Array.apply(null, Array(rows)).map(x => SquareGameBoard.getRandomInt(1, maxPerRow)));
-    }
-
-    static getRandomInt(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return new SquareGameBoard(Array.apply(null, Array(rows)).map(x => getRandomInt(1, maxPerRow)));
     }
 }
 
@@ -157,7 +157,7 @@ class ComputerAgent extends PlayerAgent {
 
     calculateRandomMove(board) {
         var nonZeroRows = board.rowCounts.filter(x => x > 0).length;
-        var rowNumber = ComputerAgent.getRandomInt(1, nonZeroRows);
+        var rowNumber = getRandomInt(1, nonZeroRows);
         var index = 0;
         while (rowNumber > 0) {
             if (board.getRowLength(index) > 0) {
@@ -167,13 +167,7 @@ class ComputerAgent extends PlayerAgent {
                 index++;
             }
         }
-        return new SquareGameMove(index, ComputerAgent.getRandomInt(1, board.getRowLength(index)));
-    }
-
-    static getRandomInt(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return new SquareGameMove(index, getRandomInt(1, board.getRowLength(index)));
     }
 }
 
@@ -184,12 +178,12 @@ class SquareGame {
 
     /**
      * Creates a new SquareGame with the specified board layout between the two given players.
-     * @param {rowCounts} An array containing the number of squares on each row.
+     * @param {board} The beginning board state.
      * @param {agentA} The first player.
      * @param {agentB} The second player.
      */
-    constructor(rowCounts, agentA, agentB) {
-        this.board = new SquareGameBoard(rowCounts);
+    constructor(agentA, agentB, board) {
+        this.board = board;
 
         this.onBoardChanged = new Event('game-changed');
         this.onBoardChanged.game = this;
@@ -227,6 +221,10 @@ class SquareGame {
      * @param {turnNumber} The number of turns taken to get to the board in question.
      */
     getBoardStateAtTurn(turnNumber) {
+		if(turnNumber > this.moveCount || turnNumber < 0) {
+			throw new RangeError("The turn number is out of range.");
+		}
+	
         var walkBack = this.pastMoves.length - turnNumber;
         var state = this.board;
         for (let i = 0; i < walkBack; i++) {
@@ -270,5 +268,9 @@ class SquareGame {
         }
         return this.pastMoves.length % 2 == 0 ? this.playerB : this.playerA;
     }
+	
+	static generateNewSquareGame(playerA, playerB, rowCountMin = 3, rowCountMax = 7, rowLengthMax = 6) {
+		return new SquareGame(playerA, playerB, SquareGameBoard.generateBoard(getRandomInt(rowCountMin, rowCountMax), rowLengthMax));
+	}
 }
 </script>
