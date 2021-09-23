@@ -1,0 +1,267 @@
+<script>
+/**
+ * Represents a move during a SquareGame.
+ */
+class SquareGameMove {
+
+    /**
+     * Represents a move during a SquareGame.
+     * @param {rowIndex} The row from which to remove squares.
+     * @param {squareCount} The number of squares to remove.
+     */
+    constructor(rowIndex, squareCount) {
+        this.rowIndex = rowIndex;
+        this.squareCount = squareCount;
+    }
+}
+
+/**
+ * Represents a given board state of a SquareGame.
+ */
+class SquareGameBoard {
+    /**
+     * Creates a new SquareGameBoard with the given row counts.
+     * @param {rowCounts} An array containing the number of squares in each row.
+     */
+    constructor(rowCounts) {
+        this.rowCounts = rowCounts;
+    }
+
+    /**
+     * Applies a move to a given board.
+     * @param {move} The move to apply.
+     */
+    applyMove(move) {
+        if (move.rowIndex >= this.rowCount || move.squareCount > this.rowCounts[move.rowIndex]) {
+            throw new RangeError("Illegal move.");
+        } else {
+            this.rowCounts[move.rowIndex] -= move.squareCount;
+        }
+    }
+
+    /**
+     * Undoes a move that was previously applied to the board and returns a new SquareGameBoard representing the board before the move.
+     * @param {move} The move to undo.
+     */
+    invertMove(move) {
+        if (move.rowIndex < 0 || move.rowIndex >= this.rowCount) {
+            throw new RangeError("Illegal row.");
+        }
+        var oldState = new SquareGameBoard(this.rowCounts.map(x => x));
+        oldState.rowCounts[move.rowIndex] += move.squareCount;
+        return oldState;
+    }
+
+    /**
+     * Returns the number of squares in the specified row.
+     */
+    getRowLength(rowIndex) {
+        if (rowIndex < 0 || rowIndex >= this.rowCount) {
+            throw new RangeError("Illegal row.");
+        }
+        return this.rowCounts[rowIndex];
+    }
+
+    /**
+     * Draws the board state to the console.
+     */
+    renderDebugBoard() {
+        for (var value of this.rowCounts) {
+            console.log(value);
+        }
+    }
+
+
+    /**
+     * Returns the number of rows that this board has.
+     */
+    get rowCount() {
+        return this.rowCounts.length;
+    }
+
+    /**
+     * Generates a random SquareGameBoard.
+     * @param {rows} The number of rows that the board has.
+     * @param {maxPerRow} The maximum number of squares in each row that the board can have.
+     */
+    static generateBoard(rows, maxPerRow) {
+        return new SquareGameBoard(Array.apply(null, Array(rows)).map(x => SquareGameBoard.getRandomInt(1, maxPerRow)));
+    }
+
+    static getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+/**
+ * Represents a competitor (human or computer) in a SquareGame.
+ */
+class PlayerAgent {
+
+    constructor() {}
+
+    /**
+     * Called by a SquareGame when it is this player's turn to move.
+     * @param {game} The SquareGame for which the player must move.
+     */
+    onPlayerTurn(game) {
+        console.log("It is the player's turn.");
+        game.board.renderDebugBoard();
+    }
+}
+
+/**
+ * Represents a computer player in a SquareGame.
+ */
+class ComputerAgent extends PlayerAgent {
+
+    /**
+     * Creates a new computer player with the given timeout time.
+     * @param {timeOutTime} The time to wait before making a move. Defaults to 0.
+     */
+    constructor(timeOutTime = 1) {
+        super();
+        this.timeOutTime = timeOutTime;
+    }
+
+    onPlayerTurn(game) {
+        setTimeout(() => {
+            var move = this.calculateBestMove(game.board);
+            if (move == undefined) {
+                game.makeMove(this, this.calculateRandomMove(game.board));
+            } else {
+                game.makeMove(this, move);
+            }
+        }, this.timeOutTime);
+    }
+
+    calculateBestMove(board) {
+        var boardNumber = 0;
+        for (let row = 0; row < board.rowCount; row++) {
+            boardNumber ^= board.getRowLength(row);
+        }
+        if (boardNumber == 0) {
+            return undefined;
+        } else {
+            for (let row = 0; row < board.rowCount; row++) {
+                var len = board.getRowLength(row);
+                if (len > (len ^ boardNumber)) {
+                    return new SquareGameMove(row, len - (len ^ boardNumber));
+                }
+            }
+            throw new Error("Could not find a best move despite the board being magic.");
+        }
+    }
+
+    calculateRandomMove(board) {
+        var nonZeroRows = board.rowCounts.filter(x => x > 0).length;
+        var rowNumber = ComputerAgent.getRandomInt(1, nonZeroRows);
+        var index = 0;
+        while (rowNumber > 0) {
+            if (board.getRowLength(index) > 0) {
+                rowNumber--;
+            }
+            if (rowNumber > 0) {
+                index++;
+            }
+        }
+        return new SquareGameMove(index, ComputerAgent.getRandomInt(1, board.getRowLength(index)));
+    }
+
+    static getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+}
+
+/**
+ * Represents an instance of a Discrete Structures square game.
+ */
+class SquareGame {
+
+    /**
+     * Creates a new SquareGame with the specified board layout between the two given players.
+     * @param {rowCounts} An array containing the number of squares on each row.
+     * @param {agentA} The first player.
+     * @param {agentB} The second player.
+     */
+    constructor(rowCounts, agentA, agentB) {
+        this.board = new SquareGameBoard(rowCounts);
+
+        this.onBoardChanged = new Event('game-changed');
+        this.onBoardChanged.game = this;
+
+        this.playerA = agentA;
+        this.playerB = agentB;
+
+        this.pastMoves = new Array();
+
+        this.playerA.onPlayerTurn(this);
+    }
+
+    /**
+     * Makes the specified move on the board as the given player.
+     * @param {agent} The player that is making the move.
+     * @param {move} The move to make.
+     */
+    makeMove(agent, move) {
+        if (agent != this.nextPlayer) {
+            throw new Error("It is not the given player's turn.");
+        }
+
+        this.board.applyMove(move);
+        this.pastMoves.push(move);
+        setTimeout(() => {
+            document.dispatchEvent(this.onBoardChanged);
+            if (!this.isComplete) {
+                this.nextPlayer.onPlayerTurn(this);
+            }
+        }, 1);
+    }
+
+    /**
+     * Returns what the state of the board was after a given number of moves.
+     * @param {turnNumber} The number of turns taken to get to the board in question.
+     */
+    getBoardStateAtTurn(turnNumber) {
+        var walkBack = this.pastMoves.length - turnNumber;
+        var state = this.board;
+        for (let i = 0; i < walkBack; i++) {
+            state = state.invertMove(this.pastMoves[this.pastMoves.length - 1 - i]);
+        }
+        return state;
+    }
+
+    /**
+     * Returns whether the game is complete.
+     */
+    get isComplete() {
+        for (var value of this.board.rowCounts) {
+            if (value > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the player who will make the next move.
+     */
+    get nextPlayer() {
+        return this.pastMoves.length % 2 == 0 ? this.playerA : this.playerB;
+    }
+
+    /**
+     * Returns the winner of this game, or throws an error if the game is still in-progress.
+     */
+    get winner() {
+        if (!this.isComplete) {
+            throw new Error("The game is not complete.");
+        }
+        return this.pastMoves.length % 2 == 0 ? this.playerB : this.playerA;
+    }
+}
+</script>
