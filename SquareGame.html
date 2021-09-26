@@ -37,12 +37,14 @@
 					this.rowCounts = rowCounts;
 				}
 				addSquare(row) {
-					this.rowCounts[row]++;
-					drawBoard(this, true);
+					if(this.rowCounts[row]<7){
+						this.rowCounts[row]++;
+					};
+					drawBoard(this, "provisional");
 				}
 				removeSquare(row) {
-					this.rowCounts[row]--;
-					drawBoard(this, true);
+					if(this.rowCounts[row]>1){this.rowCounts[row]--};
+					drawBoard(this, "provisional");
 				}
 
 				/**
@@ -194,9 +196,9 @@
 
 					this.onBoardChanged = new Event("game-changed");
 					this.onBoardChanged.game = this;
-					
-					this.onGameComplete = new Event("game-complete");
-					this.onGameComplete.game = this;
+
+					this.gameComplete = new Event("game-complete");
+					this.gameComplete.game = this;
 
 					this.playerA = agentA;
 					this.playerB = agentB;
@@ -222,9 +224,8 @@
 					setTimeout(() => {
 						document.dispatchEvent(this.onBoardChanged);
 						if (this.isComplete) {
-							document.dispatchEvent(this.onGameComplete);
-						}
-						else {
+							document.dispatchEvent(this.gameComplete);
+						} else {
 							this.nextPlayer.onPlayerTurn(this);
 						}
 					}, 1);
@@ -290,6 +291,27 @@
 		</script>
 		<script></script>
 		<style>
+			#body {
+				background-color: #5b899b;
+				font-family: "Gluten", cursive;
+				color: wheat;
+				text-align: center;
+			}
+			
+			button {
+				background-color: tan;
+				border: none;
+				padding: 10px 6px;
+				text-decoration: none;
+				display: inline-block;
+				font-size: 16px;
+				border-radius: 5%;
+				border: 2px solid tan;
+			}
+			button:hover{
+				background-color:#bfa37c;
+				border: 2px dashed red;
+			}
 			.hidden {
 				display: none;
 			}
@@ -299,12 +321,37 @@
 			}
 			#selected-mode {
 				border: 5px solid red;
+				background-color: tan;
+				padding: 10px 6px;
+				text-decoration: none;
+				display: inline-block;
+				font-size: 16px;
+				border-radius: 5%;
 			}
 			.computer-player {
 				font-family: monospace;
 			}
 			.human-player {
 				font-family: cursive;
+			}
+			#history-container {
+				float: right;
+				position: absolute;
+				top: 63px;
+				right: 0px;
+				display: grid;
+				width: 120px;
+				outline: 1px solid white;
+				padding: 4px;
+			}
+			.history-container-button-box {
+				float: right;
+				position: absolute;
+				top: 10px;
+				right: 0px;
+				width: 120px;
+				outline: 1px solid white;
+				padding: 4px;
 			}
 			.row {
 				display: flex;
@@ -315,7 +362,7 @@
 			.square {
 				padding: 20px 20px;
 				display: block;
-				background-color: antiquewhite;
+				background-color: whitesmoke;
 				border: 1px solid black;
 				margin: 5px;
 			}
@@ -325,85 +372,203 @@
 			.chopping-block {
 				border-style: dotted;
 			}
+			.human-player,
+			.computer-player {
+				background-color: #7ba5b5;
+				width: 150px;
+			}
+			.active-player {
+				outline: 2px solid green;
+			}
 		</style>
 	</head>
-	<body>
+	<body id="body">
 		<script>
 			let board;
 			let agentA;
 			let agentB;
 			let game;
-			function drawBoard(gameboard, addable = false, shouldDisplayBinary = true, shouldDisplayXOR = true) {
-				let el = document.getElementById("gameboard-container");
+			let currentMoveDisplayed = 0;
+			function drawHistory() {
+				const el = document.getElementById("history-container");
 				el.innerHTML = "";
+				if (game != undefined) {
+					for (let i = 0; i <= game.moveCount; i++) {
+						let text;
+						switch (i) {
+							case 0:
+								text = "Initial";
+								break;
+							case game.moveCount:
+								text = "Current";
+								break;
+							default:
+								text = "Row " + (game.pastMoves[i - 1].rowIndex + 1) + " take " + game.pastMoves[i - 1].squareCount;
+						}
+						const button = document.createElement("button");
+						button.innerHTML = text;
+						if (currentMoveDisplayed == i) {
+							button.style.color = "green";
+							button.style.fontWeight = "bold";
+						} else {
+							button.style.color = i % 2 == 0 ? "red" : "blue";
+							button.style.fontWeight = "initial";
+						}
+						if (i == game.moveCount) {
+							button.onclick = (ev) => {
+								currentMoveDisplayed = i;
+								drawBoard(game.getBoardStateAtTurn(i), "normal");
+							};
+						} else {
+							button.onclick = (ev) => {
+								currentMoveDisplayed = i;
+								drawBoard(game.getBoardStateAtTurn(i), "historical");
+							};
+						}
+						el.append(button);
+					}
+				}
+			}
+			const DISPLAY_SQUARES = 1;
+			const DISPLAY_BINARY = 2;
+			const DISPLAY_XOR = 4;
+			const DISPLAY_PROVISIONAL_XOR = 8;
+			const DISPLAY_DECIMAL = 16;
+			/* mode is "normal", "provisional", or "historical" */
+			function drawBoard(gameboard, mode = "normal", display = 31) {
+				if (mode == "normal") {
+					currentMoveDisplayed = game.moveCount;
+					if (game.nextPlayer == agentA) {
+						setFirstPlayerActive();
+					} else {
+						setSecondPlayerActive();
+					}
+				} else if (mode == "historical") {
+					if (currentMoveDisplayed == undefined || currentMoveDisplayed % 2 == 0) {
+						setFirstPlayerActive();
+					} else {
+						setSecondPlayerActive();
+					}
+				} else if (mode == "provisional") {
+					game = undefined;
+				}
+
+				drawHistory();
+				let el = document.getElementById("gameboard-container");
+				const displaySquares = display % 2 === 1;
+				const displayBinary = (display >>> 1) % 2 === 1;
+				const displayXOR = (display >>> 2) % 2 === 1;
+				const displayDecimal = (display >>> 3) % 2 === 1;
+				el.innerHTML = "";
+				let addable;
 				let XOR = 0;
 				gameboard.rowCounts.forEach((length, id) => {
 					const row = document.createElement("div");
-					if (length > 0) {
-						XOR ^= length;
-						row.setAttribute("data-index", id);
-						row.classList.add("row");
-						if (shouldDisplayBinary) {
-							const binRepEl = document.createElement("p");
-							binRepEl.classList.add("bin-rep");
-							binRepEl.innerHTML = "0".repeat(3-length.toString(2).length)+length.toString(2);
-							row.append(binRepEl);
+					XOR ^= length;
+					row.setAttribute("data-index", id);
+					row.classList.add("row");
+					if (displayBinary) {
+						const binRepEl = document.createElement("p");
+						binRepEl.classList.add("bin-rep");
+						if (length == 0) {
+							binRepEl.innerHTML = "0".repeat(3);
+						} else {
+							binRepEl.innerHTML = "0".repeat(3 - length.toString(2).length) + length.toString(2);
 						}
-						for (let i = 0; i < length; i++) {
+						row.append(binRepEl);
+					}
+					if (displaySquares) {
+						if (length == 0) {
 							let squareContainer = document.createElement("div");
 							squareContainer.classList.add("square-container");
 							let square = document.createElement("div");
 							square.classList.add("square");
-							square.setAttribute("data-index", i);
-							const eventhandler = (isEntering) => {
-								[...square.parentElement.parentElement.children]
-									.map((possibleContainer) => {
-										try {
-											if (!possibleContainer.children[0].classList.contains("square")) {
-												throw new Error();
-											}
-											return possibleContainer.children[0];
-										} catch (e) {
-											return false;
-										}
-									})
-									.filter((v) => v !== false)
-									.reverse()
-									.some((otherSquare) => {
-										isEntering ? otherSquare.classList.add("chopping-block") : otherSquare.classList.remove("chopping-block");
-										return otherSquare === square;
-									});
-							};
-							squareContainer.addEventListener("mouseenter", () => eventhandler(true));
-							squareContainer.addEventListener("mouseleave", () => eventhandler(false));
-							square.addEventListener("click", () => {
-								const rowIndex = square.parentElement.parentElement.getAttribute("data-index");
-								game.makeMove(game.nextPlayer, new SquareGameMove(rowIndex, board.getRowLength(rowIndex) - i));
-							});
+							square.classList.add("hidden");
+							squareContainer.classList.add("hidden");
 							squareContainer.append(square);
 							row.append(squareContainer);
-						}
-						if (addable) {
-							const addButton = document.createElement("button");
-							addButton.innerHTML = "+";
-							addButton.addEventListener("click", () => {
-								board.addSquare(id);
-							});
-							const removeButton = document.createElement("button");
-							removeButton.innerHTML = "-";
-							removeButton.addEventListener("click", () => board.removeSquare(id));
-							row.append(removeButton);
-							row.append(addButton);
+						} else {
+							for (let i = 0; i < length; i++) {
+								let squareContainer = document.createElement("div");
+								squareContainer.classList.add("square-container");
+								let square = document.createElement("div");
+								square.classList.add("square");
+								square.setAttribute("data-index", i);
+
+								if (mode == "normal") {
+									const eventhandler = (isEntering) => {
+										[...square.parentElement.parentElement.children]
+											.map((possibleContainer) => {
+												try {
+													if (!possibleContainer.children[0].classList.contains("square")) {
+														throw new Error();
+													}
+													return possibleContainer.children[0];
+												} catch (e) {
+													return false;
+												}
+											})
+											.filter((v) => v !== false)
+											.reverse()
+											.some((otherSquare) => {
+												isEntering ? otherSquare.classList.add("chopping-block") : otherSquare.classList.remove("chopping-block");
+												return otherSquare === square;
+											});
+									};
+									squareContainer.addEventListener("mouseenter", () => eventhandler(true));
+									squareContainer.addEventListener("mouseleave", () => eventhandler(false));
+									square.addEventListener("click", () => {
+										if (!(game.nextPlayer instanceof ComputerAgent)) {
+											const rowIndex = +square.parentElement.parentElement.getAttribute("data-index");
+											game.makeMove(game.nextPlayer, new SquareGameMove(rowIndex, board.getRowLength(rowIndex) - i));
+										}
+									});
+								}
+								squareContainer.append(square);
+								row.append(squareContainer);
+							}
+							if (mode == "provisional") {
+								const addButton = document.createElement("button");
+								addButton.innerHTML = "+";
+								addButton.addEventListener("click", () => {
+									board.addSquare(id);
+								});
+								const removeButton = document.createElement("button");
+								removeButton.innerHTML = "-";
+								removeButton.addEventListener("click", () => board.removeSquare(id));
+								row.append(removeButton);
+								row.append(addButton);
+								setFirstPlayerActive();
+							}
 						}
 					}
 					el.append(row);
 				});
-				if (shouldDisplayXOR) {
+				if (displayXOR) {
 					const XORel = document.createElement("p");
 					XORel.classList.add("bin-rep", "xor");
-					XORel.innerHTML = "0".repeat(3-XOR.toString(2).length)+XOR.toString(2);
+					XORel.innerHTML = "0".repeat(3 - XOR.toString(2).length) + XOR.toString(2);
 					el.append(XORel);
 				}
+			}
+
+			function setPlayerActive(playerActiveId, playerInactiveId) {
+				let cList = document.getElementById(playerActiveId).classList;
+				if (!cList.contains("active-player")) {
+					cList.add("active-player");
+				}
+				cList = document.getElementById(playerInactiveId).classList;
+				if (cList.contains("active-player")) {
+					cList.remove("active-player");
+				}
+			}
+
+			function setFirstPlayerActive() {
+				setPlayerActive("first-player", "second-player");
+			}
+
+			function setSecondPlayerActive() {
+				setPlayerActive("second-player", "first-player");
 			}
 		</script>
 		<h1>Square Game</h1>
@@ -422,15 +587,15 @@
 					document.getElementById("gameboard-container").classList.remove("hidden");
 				};
 			</script>
-			<button hidden id="selected-mode">For when no mode has been selected, this has id of selected-mode</button>
-			<button class="mode-selector" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,false);">You vs Friend</button>
-			<button class="mode-selector" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,true);">You vs Computer</button>
-			<button class="mode-selector" onclick="makeElSelected(this);setPlayer(1,true);setPlayer(2,true);">Computer vs Computer</button>
+			<button hidden style="display: none" id="selected-mode">For when no mode has been selected, this has id of selected-mode</button>
+			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,false);">You vs Friend</button>
+			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,true);">You vs Computer</button>
+			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,true);setPlayer(2,true);">Computer vs Computer</button>
 		</div>
 		<div id="players-container-container">
 			<div id="players-container">
-				<p contenteditable id="first-player"></p>
-				<p contenteditable id="second-player"></p>
+				<p contenteditable id="first-player" style="color:red; width: 150px"></p>
+				<p contenteditable id="second-player" style="color:blue; width: 150px"></p>
 			</div>
 			<script>
 				function swap() {
@@ -450,19 +615,71 @@
 			</script>
 			<button onclick="swap()">Swap Order</button>
 		</div>
-		<button onclick="board=SquareGameBoard.generateBoard(getRandomInt(2,9),7); drawBoard(board,true);">Generate Board</button>
+		<script>
+			function setRandomRowQty() {
+				document.getElementById("row-qty").value = getRandomInt(2, 9);
+			}
+		</script>
+		<button onclick="setRandomRowQty()">Random</button>
+		<input id="row-qty" min="1" type="number" />
+		<script>
+			setRandomRowQty();
+		</script>
+		<button onclick="board=SquareGameBoard.generateBoard(+document.getElementById('row-qty').value,7); drawBoard(board,'provisional');">Generate Board</button>
 		<div id="gameboard-container"></div>
 		<script>
 			function startGame() {
+				const computerDelayMS = 500;
+
 				agentA = document.getElementById("first-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
 				agentB = document.getElementById("second-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
-				drawBoard(board);
+
+				if (agentA instanceof ComputerAgent && !(agentB instanceof ComputerAgent)) {
+					agentA.timeOutTime = computerDelayMS;
+				} else if (agentB instanceof ComputerAgent && !(agentA instanceof ComputerAgent)) {
+					agentB.timeOutTime = computerDelayMS;
+				}
+
 				game = new SquareGame(agentA, agentB, board);
+				drawBoard(board);
 				document.addEventListener("game-changed", () => {
 					drawBoard(board);
 				});
+				document.addEventListener("game-complete", () => {
+					const winEl = document.createElement("p");
+					const winnerName = game.moveCount % 2 == 1 ? document.getElementById("first-player").innerHTML : document.getElementById("second-player").innerHTML;
+					winEl.classList.add("winner-statement");
+					winEl.innerHTML = winnerName + " won!";
+					document.getElementById("gameboard-container").innerHTML = "";
+					document.getElementById("gameboard-container").append(winEl);
+					document.getElementById("reset").innerHTML = "Play Again!";
+				});
+			}
+
+			function decrementMoveDisplayed() {
+				if (game != undefined) {
+					if (currentMoveDisplayed > 0) {
+						currentMoveDisplayed--;
+						drawBoard(game.getBoardStateAtTurn(currentMoveDisplayed), "historical");
+					}
+				}
+			}
+
+			function incrementMoveDisplayed() {
+				if (game != undefined) {
+					if (currentMoveDisplayed < game.moveCount) {
+						currentMoveDisplayed++;
+						drawBoard(game.getBoardStateAtTurn(currentMoveDisplayed), game.moveCount == currentMoveDisplayed ? "normal" : "historical");
+					}
+				}
 			}
 		</script>
-		<button onclick="startGame()">Start Game!</button>
+		<div class="history-container-button-box">
+			<button style="width: 47%" onclick="decrementMoveDisplayed()">◀</button>
+			<button style="width: 47%" onclick="incrementMoveDisplayed()">▶</button>
+		</div>
+		<div id="history-container"></div>
+		<button id="start-game" onclick="startGame()">Start Game!</button>
+		<button id="reset" class="phase one" onclick="setHiddenState(0);">Play Again!</button>
 	</body>
 </html>

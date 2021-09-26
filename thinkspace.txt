@@ -1,2 +1,7 @@
 Make sure that no matter what, a move can't be made if the current player turn is a computer, otherwise people could jump the gun and play for the computer in the delay time
 binary number display
+
+be able to edit binary values
+
+max of 8 per row
+min of 1 per row
