@@ -209,7 +209,7 @@
 				 * @param {move} The move to make.
 				 */
 				makeMove(agent, move) {
-					console.dir({agent,move});
+					console.dir({ agent, move });
 					if (agent != this.nextPlayer) {
 						throw new Error("It is not the given player's turn.");
 					}
@@ -327,14 +327,22 @@
 			let agentA;
 			let agentB;
 			let game;
-			function drawBoard(gameboard, addable = false) {
+			function drawBoard(gameboard, addable = false, shouldDisplayBinary = true, shouldDisplayXOR = true) {
 				let el = document.getElementById("gameboard-container");
 				el.innerHTML = "";
+				let XOR = 0;
 				gameboard.rowCounts.forEach((length, id) => {
 					const row = document.createElement("div");
 					if (length > 0) {
+						XOR ^= length;
 						row.setAttribute("data-index", id);
 						row.classList.add("row");
+						if (shouldDisplayBinary) {
+							const binRepEl = document.createElement("p");
+							binRepEl.classList.add("bin-rep");
+							binRepEl.innerHTML = "0".repeat(3-length.toString(2).length)+length.toString(2);
+							row.append(binRepEl);
+						}
 						for (let i = 0; i < length; i++) {
 							let squareContainer = document.createElement("div");
 							squareContainer.classList.add("square-container");
@@ -384,6 +392,12 @@
 					}
 					el.append(row);
 				});
+				if (shouldDisplayXOR) {
+					const XORel = document.createElement("p");
+					XORel.classList.add("bin-rep", "xor");
+					XORel.innerHTML = "0".repeat(3-XOR.toString(2).length)+XOR.toString(2);
+					el.append(XORel);
+				}
 			}
 		</script>
 		<h1>Square Game</h1>
@@ -437,9 +451,9 @@
 				agentA = document.getElementById("first-player").classList.contains("computer-player") === "true" ? new ComputerAgent() : new PlayerAgent();
 				agentB = document.getElementById("second-player").classList.contains("computer-player") === "true" ? new ComputerAgent() : new PlayerAgent();
 				game = new SquareGame(agentA, agentB, board);
-				document.addEventListener("game-changed",()=>{
+				document.addEventListener("game-changed", () => {
 					drawBoard(board);
-				})
+				});
 			}
 		</script>
 		<button onclick="startGame()">Start Game!</button>
