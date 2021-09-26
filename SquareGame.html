@@ -194,6 +194,9 @@
 
 					this.onBoardChanged = new Event("game-changed");
 					this.onBoardChanged.game = this;
+					
+					this.onGameComplete = new Event("game-complete");
+					this.onGameComplete.game = this;
 
 					this.playerA = agentA;
 					this.playerB = agentB;
@@ -218,7 +221,10 @@
 					this.pastMoves.push(move);
 					setTimeout(() => {
 						document.dispatchEvent(this.onBoardChanged);
-						if (!this.isComplete) {
+						if (this.isComplete) {
+							document.dispatchEvent(this.onGameComplete);
+						}
+						else {
 							this.nextPlayer.onPlayerTurn(this);
 						}
 					}, 1);
