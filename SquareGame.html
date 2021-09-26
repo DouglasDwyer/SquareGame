@@ -448,8 +448,9 @@
 		<div id="gameboard-container"></div>
 		<script>
 			function startGame() {
-				agentA = document.getElementById("first-player").classList.contains("computer-player") === "true" ? new ComputerAgent() : new PlayerAgent();
-				agentB = document.getElementById("second-player").classList.contains("computer-player") === "true" ? new ComputerAgent() : new PlayerAgent();
+				agentA = document.getElementById("first-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
+				agentB = document.getElementById("second-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
+				drawBoard(board);
 				game = new SquareGame(agentA, agentB, board);
 				document.addEventListener("game-changed", () => {
 					drawBoard(board);
