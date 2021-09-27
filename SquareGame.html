@@ -3,6 +3,187 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Square Game!</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Geostar+Fill&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Gluten&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet" />
+		<style>
+			:root {
+				--width: min(100vw, 500px);
+				--player-separation: calc(2% * var(--width));
+				--player-width: calc((var(--width)-var(--player-separation)) / 2);
+			}
+			.hidden {
+				display: none;
+			}
+			input::-webkit-outer-spin-button,
+			input::-webkit-inner-spin-button {
+				-webkit-appearance: none;
+				margin: 0;
+			}
+
+			/* Firefox */
+			input[type="number"] {
+				-moz-appearance: textfield;
+			}
+			* {
+				margin: 0;
+				padding: 0;
+				font-size: 18px;
+			}
+
+			button {
+				background-color: tan;
+				padding: 4px 4px;
+				text-decoration: none;
+				display: inline-block;
+				border-radius: 5%;
+				border: 2px solid tan;
+				margin: 3px;
+				font-family: "Gluten", cursive;
+			}
+			body {
+				background-color: #5b899b;
+				color: wheat;
+				width: var(--width);
+				margin: 0 auto;
+				text-align: center;
+				font-family: "Gluten", cursive;
+			}
+			#title {
+				font-family: "Geostar Fill", cursive;
+				font-size: 64px;
+				line-height: 100%;
+				margin: 2vh 0;
+			}
+			#about {
+				font-size: 150%;
+				font-style: italic;
+			}
+			#players-container {
+				display: flex;
+				align-content: center;
+				justify-content: center;
+				gap: var(--player-separation);
+			}
+			#first-player,
+			#second-player {
+				padding: 5px;
+				width: 100px;
+			}
+			#first-player-container,
+			#second-player-container {
+				background-color: #7ba5b5;
+				width: 150px;
+				height: 50px;
+				display: flex;
+				align-items: center;
+				align-content: centerline;
+				justify-content: center;
+				border-radius: 4px;
+				margin: 3px;
+			}
+			#first-player-type,
+			#second-player-type {
+				height: 50px;
+			}
+			#first-player {
+				color: red;
+			}
+			#second-player {
+				color: blue;
+			}
+			#gameboard-container {
+				display: inline-flex;
+				flex-direction: column;
+			}
+			.row {
+				display: flex;
+				align-items: center;
+			}
+
+			.computer-player {
+				font-family: monospace;
+			}
+			.human-player {
+				font-family: cursive;
+			}
+			#history-container {
+				float: right;
+				position: absolute;
+				top: 63px;
+				right: 0px;
+				display: grid;
+				width: 120px;
+				outline: 1px solid white;
+				padding: 4px;
+			}
+			.history-container-button-box {
+				float: right;
+				position: absolute;
+				top: 10px;
+				right: 0px;
+				width: 120px;
+				outline: 1px solid white;
+				padding: 4px;
+			}
+			.row {
+				display: flex;
+				width: 100%;
+				flex-direction: row;
+				margin: 5px 0;
+			}
+			.square {
+				padding: 20px 20px;
+				display: block;
+				background-color: whitesmoke;
+				border: 1px solid black;
+				margin: 5px;
+			}
+
+			.empty-row-box {
+				background: none;
+				border: none;
+			}
+			.square-container {
+				padding: 5px;
+			}
+			.chopping-block {
+				border-style: dotted;
+			}
+			.active-player {
+				outline: 2px solid green;
+			}
+			#row-qty {
+				width: 30px;
+				padding: 4px;
+				background-color: transparent;
+				border: 0px solid blue;
+				border-bottom: 2px dashed tan;
+				font-family: "Gluten", cursive;
+				color: tan;
+				z-index: 99;
+			}
+			#row-qty:focus{
+				outline:none;
+			}
+			.edit-row-count {
+				margin: 5px;
+				height: 25px;
+				line-height: 0px;
+			}
+			#vs {
+				display: flex;
+				font-size: xx-large;
+				padding: 1%;
+				margin: 1%;
+				border-width: 4px 0 4px 0;
+				border-style: solid;
+				align-items: center;
+				font-family: "Staatliches";
+			}
+		</style>
 		<script>
 			function getRandomInt(min, max) {
 				min = Math.ceil(min);
@@ -37,13 +218,15 @@
 					this.rowCounts = rowCounts;
 				}
 				addSquare(row) {
-					if(this.rowCounts[row]<7){
-						this.rowCounts[row]++;
-					};
+					this.rowCounts[row]++;
+					setBiggestRowCount(this);
 					drawBoard(this, "provisional");
 				}
 				removeSquare(row) {
-					if(this.rowCounts[row]>1){this.rowCounts[row]--};
+					if (this.rowCounts[row] > 1) {
+						this.rowCounts[row]--;
+					}
+					setBiggestRowCount(this);
 					drawBoard(this, "provisional");
 				}
 
@@ -288,107 +471,95 @@
 					return new SquareGame(playerA, playerB, SquareGameBoard.generateBoard(getRandomInt(rowCountMin, rowCountMax), rowLengthMax));
 				}
 			}
-		</script>
-		<script></script>
-		<style>
-			#body {
-				background-color: #5b899b;
-				font-family: "Gluten", cursive;
-				color: wheat;
-				text-align: center;
-			}
-			
-			button {
-				background-color: tan;
-				border: none;
-				padding: 10px 6px;
-				text-decoration: none;
-				display: inline-block;
-				font-size: 16px;
-				border-radius: 5%;
-				border: 2px solid tan;
-			}
-			button:hover{
-				background-color:#bfa37c;
-				border: 2px dashed red;
-			}
-			.hidden {
-				display: none;
-			}
-			#gameboard-container {
-				display: flex;
-				flex-direction: column;
-			}
-			#selected-mode {
-				border: 5px solid red;
-				background-color: tan;
-				padding: 10px 6px;
-				text-decoration: none;
-				display: inline-block;
-				font-size: 16px;
-				border-radius: 5%;
-			}
-			.computer-player {
-				font-family: monospace;
-			}
-			.human-player {
-				font-family: cursive;
-			}
-			#history-container {
-				float: right;
-				position: absolute;
-				top: 63px;
-				right: 0px;
-				display: grid;
-				width: 120px;
-				outline: 1px solid white;
-				padding: 4px;
-			}
-			.history-container-button-box {
-				float: right;
-				position: absolute;
-				top: 10px;
-				right: 0px;
-				width: 120px;
-				outline: 1px solid white;
-				padding: 4px;
-			}
-			.row {
-				display: flex;
-				width: 100%;
-				flex-direction: row;
-				margin: 5px 0;
-			}
-			.square {
-				padding: 20px 20px;
-				display: block;
-				background-color: whitesmoke;
-				border: 1px solid black;
-				margin: 5px;
-			}
-			.square-container {
-				padding: 5px;
-			}
-			.chopping-block {
-				border-style: dotted;
-			}
-			.human-player,
-			.computer-player {
-				background-color: #7ba5b5;
-				width: 150px;
-			}
-			.active-player {
-				outline: 2px solid green;
-			}
-		</style>
-	</head>
-	<body id="body">
-		<script>
+
 			let board;
 			let agentA;
 			let agentB;
 			let game;
 			let currentMoveDisplayed = 0;
+			let biggestRowSize = 1;
+			function makeElSelected(el) {
+				document.getElementsByClassName("selected-mode")[0].classList.remove("selected-mode");
+				el.classList.add("selected-mode");
+				document.getElementById("gameboard-container").classList.remove("hidden");
+			}
+			function setPlayer(p, isComputer) {
+				const el = document.getElementById(p == 2 ? "second-player" : "first-player");
+				el.innerHTML = (isComputer ? "Computer" : "Human") + " " + p;
+				el.className = "";
+				el.classList.add(isComputer ? "computer-player" : "human-player");
+			}
+			function swap() {
+				const getInfoObject = (el) => ({
+					name: el.innerHTML,
+					class: el.className,
+				});
+				const p1el = document.getElementById("first-player");
+				const p2el = document.getElementById("second-player");
+				const p1 = getInfoObject(p1el);
+				const p2 = getInfoObject(p2el);
+				p1el.innerHTML = p2.name;
+				p1el.className = p2.class;
+				p2el.innerHTML = p1.name;
+				p2el.className = p1.class;
+			}
+			function setRandomRowQty() {
+				document.getElementById("row-qty").value = getRandomInt(2, 9);
+			}
+
+			function startOrReset() {
+				if (game == undefined) {
+					startGame();
+					document.getElementById("start-game").innerText = "Reset";
+				} else {
+					game = undefined;
+					showMenuElements();
+					document.getElementById("start-game").innerText = "Start Game!";
+					initBoard();
+				}
+			}
+
+			function hideMenuElements() {
+				for (let i of document.getElementsByClassName("no-show-midgame")) {
+					i.style.display = "none";
+				}
+			}
+
+			function showMenuElements() {
+				for (let i of document.getElementsByClassName("no-show-midgame")) {
+					i.style.display = "initial";
+				}
+			}
+
+			function startGame() {
+				const computerDelayMS = 500;
+
+				agentA = document.getElementById("first-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
+				agentB = document.getElementById("second-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
+
+				if (agentA instanceof ComputerAgent && !(agentB instanceof ComputerAgent)) {
+					agentA.timeOutTime = computerDelayMS;
+				} else if (agentB instanceof ComputerAgent && !(agentA instanceof ComputerAgent)) {
+					agentB.timeOutTime = computerDelayMS;
+				}
+
+				game = new SquareGame(agentA, agentB, board);
+				drawBoard(board);
+				document.addEventListener("game-changed", () => {
+					drawBoard(board);
+				});
+				document.addEventListener("game-complete", () => {
+					const winEl = document.createElement("p");
+					const winnerName = game.moveCount % 2 == 1 ? document.getElementById("first-player").innerHTML : document.getElementById("second-player").innerHTML;
+					winEl.classList.add("winner-statement");
+					winEl.innerHTML = winnerName + " won!";
+					document.getElementById("gameboard-container").innerHTML = "";
+					document.getElementById("gameboard-container").append(winEl);
+					document.getElementById("reset").innerHTML = "Play Again!";
+				});
+
+				hideMenuElements();
+			}
 			function drawHistory() {
 				const el = document.getElementById("history-container");
 				el.innerHTML = "";
@@ -429,13 +600,8 @@
 					}
 				}
 			}
-			const DISPLAY_SQUARES = 1;
-			const DISPLAY_BINARY = 2;
-			const DISPLAY_XOR = 4;
-			const DISPLAY_PROVISIONAL_XOR = 8;
-			const DISPLAY_DECIMAL = 16;
 			/* mode is "normal", "provisional", or "historical" */
-			function drawBoard(gameboard, mode = "normal", display = 31) {
+			function drawBoard(gameboard, mode = "normal") {
 				if (mode == "normal") {
 					currentMoveDisplayed = game.moveCount;
 					if (game.nextPlayer == agentA) {
@@ -452,13 +618,12 @@
 				} else if (mode == "provisional") {
 					game = undefined;
 				}
-
 				drawHistory();
 				let el = document.getElementById("gameboard-container");
-				const displaySquares = display % 2 === 1;
-				const displayBinary = (display >>> 1) % 2 === 1;
-				const displayXOR = (display >>> 2) % 2 === 1;
-				const displayDecimal = (display >>> 3) % 2 === 1;
+				const displaySquares = document.getElementById("show-squares").checked;
+				const displayBinary = document.getElementById("show-binary").checked;
+				const displayXOR = document.getElementById("show-xor").checked;
+				const displayDecimal = document.getElementById("show-decimal").checked;
 				el.innerHTML = "";
 				let addable;
 				let XOR = 0;
@@ -471,20 +636,28 @@
 						const binRepEl = document.createElement("p");
 						binRepEl.classList.add("bin-rep");
 						if (length == 0) {
-							binRepEl.innerHTML = "0".repeat(3);
+							binRepEl.innerHTML = "0".repeat(biggestRowSize);
 						} else {
-							binRepEl.innerHTML = "0".repeat(3 - length.toString(2).length) + length.toString(2);
+							binRepEl.innerHTML = "0".repeat(biggestRowSize - length.toString(2).length) + length.toString(2);
 						}
 						row.append(binRepEl);
+					}
+					if (displayDecimal) {
+						const div = document.createElement("div");
+						div.style.width = "30px";
+						const binRepEl = document.createElement("p");
+						binRepEl.innerHTML = " " + length.toString();
+						div.appendChild(binRepEl);
+						row.append(div);
 					}
 					if (displaySquares) {
 						if (length == 0) {
 							let squareContainer = document.createElement("div");
 							squareContainer.classList.add("square-container");
 							let square = document.createElement("div");
+							square.classList.add("empty-row-box");
 							square.classList.add("square");
-							square.classList.add("hidden");
-							squareContainer.classList.add("hidden");
+							//squareContainer.classList.add("hidden");
 							squareContainer.append(square);
 							row.append(squareContainer);
 						} else {
@@ -530,11 +703,13 @@
 							if (mode == "provisional") {
 								const addButton = document.createElement("button");
 								addButton.innerHTML = "+";
+								addButton.classList.add("edit-row-count");
 								addButton.addEventListener("click", () => {
 									board.addSquare(id);
 								});
 								const removeButton = document.createElement("button");
 								removeButton.innerHTML = "-";
+								removeButton.classList.add("edit-row-count");
 								removeButton.addEventListener("click", () => board.removeSquare(id));
 								row.append(removeButton);
 								row.append(addButton);
@@ -547,7 +722,7 @@
 				if (displayXOR) {
 					const XORel = document.createElement("p");
 					XORel.classList.add("bin-rep", "xor");
-					XORel.innerHTML = "0".repeat(3 - XOR.toString(2).length) + XOR.toString(2);
+					XORel.innerHTML = "0".repeat(biggestRowSize - XOR.toString(2).length) + XOR.toString(2);
 					el.append(XORel);
 				}
 			}
@@ -570,92 +745,6 @@
 			function setSecondPlayerActive() {
 				setPlayerActive("second-player", "first-player");
 			}
-		</script>
-		<h1>Square Game</h1>
-		<p>Made for Northeastern University CS 1800 - Discrete Structures</p>
-		<div id="mode-selector-container">
-			<script>
-				function setPlayer(p, isComputer) {
-					const el = document.getElementById(p == 2 ? "second-player" : "first-player");
-					el.innerHTML = (isComputer ? "Computer" : "Human") + " " + p;
-					el.className = "";
-					el.classList.add(isComputer ? "computer-player" : "human-player");
-				}
-				const makeElSelected = (el) => {
-					document.getElementById("selected-mode").removeAttribute("id");
-					el.id = "selected-mode";
-					document.getElementById("gameboard-container").classList.remove("hidden");
-				};
-			</script>
-			<button hidden style="display: none" id="selected-mode">For when no mode has been selected, this has id of selected-mode</button>
-			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,false);">You vs Friend</button>
-			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,true);">You vs Computer</button>
-			<button class="mode-selector" id="button" onclick="makeElSelected(this);setPlayer(1,true);setPlayer(2,true);">Computer vs Computer</button>
-		</div>
-		<div id="players-container-container">
-			<div id="players-container">
-				<p contenteditable id="first-player" style="color:red; width: 150px"></p>
-				<p contenteditable id="second-player" style="color:blue; width: 150px"></p>
-			</div>
-			<script>
-				function swap() {
-					const getInfoObject = (el) => ({
-						name: el.innerHTML,
-						class: el.className,
-					});
-					const p1el = document.getElementById("first-player");
-					const p2el = document.getElementById("second-player");
-					const p1 = getInfoObject(p1el);
-					const p2 = getInfoObject(p2el);
-					p1el.innerHTML = p2.name;
-					p1el.className = p2.class;
-					p2el.innerHTML = p1.name;
-					p2el.className = p1.class;
-				}
-			</script>
-			<button onclick="swap()">Swap Order</button>
-		</div>
-		<script>
-			function setRandomRowQty() {
-				document.getElementById("row-qty").value = getRandomInt(2, 9);
-			}
-		</script>
-		<button onclick="setRandomRowQty()">Random</button>
-		<input id="row-qty" min="1" type="number" />
-		<script>
-			setRandomRowQty();
-		</script>
-		<button onclick="board=SquareGameBoard.generateBoard(+document.getElementById('row-qty').value,7); drawBoard(board,'provisional');">Generate Board</button>
-		<div id="gameboard-container"></div>
-		<script>
-			function startGame() {
-				const computerDelayMS = 500;
-
-				agentA = document.getElementById("first-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
-				agentB = document.getElementById("second-player").classList.contains("computer-player") ? new ComputerAgent() : new PlayerAgent();
-
-				if (agentA instanceof ComputerAgent && !(agentB instanceof ComputerAgent)) {
-					agentA.timeOutTime = computerDelayMS;
-				} else if (agentB instanceof ComputerAgent && !(agentA instanceof ComputerAgent)) {
-					agentB.timeOutTime = computerDelayMS;
-				}
-
-				game = new SquareGame(agentA, agentB, board);
-				drawBoard(board);
-				document.addEventListener("game-changed", () => {
-					drawBoard(board);
-				});
-				document.addEventListener("game-complete", () => {
-					const winEl = document.createElement("p");
-					const winnerName = game.moveCount % 2 == 1 ? document.getElementById("first-player").innerHTML : document.getElementById("second-player").innerHTML;
-					winEl.classList.add("winner-statement");
-					winEl.innerHTML = winnerName + " won!";
-					document.getElementById("gameboard-container").innerHTML = "";
-					document.getElementById("gameboard-container").append(winEl);
-					document.getElementById("reset").innerHTML = "Play Again!";
-				});
-			}
-
 			function decrementMoveDisplayed() {
 				if (game != undefined) {
 					if (currentMoveDisplayed > 0) {
@@ -673,13 +762,88 @@
 					}
 				}
 			}
+
+			function setBiggestRowCount(bo) {
+				let size = 0;
+				for (let b of bo.rowCounts) {
+					if (b > size) {
+						size = b;
+					}
+				}
+				for (let i = 1; i < 2147483647; i++) {
+					if (Math.pow(2, i) > size) {
+						biggestRowSize = i;
+						return;
+					}
+				}
+			}
+			function initBoard() {
+				board = SquareGameBoard.generateBoard(+document.getElementById("row-qty").value, 7);
+				setBiggestRowCount(board);
+				drawBoard(board, "provisional");
+			}
+			function togglePlayerType(p) {
+				if (game == undefined) {
+					if (p == 2) {
+						el = document.getElementById("second-player");
+						buttonEl = document.getElementById("second-player-type");
+					} else {
+						el = document.getElementById("first-player");
+						buttonEl = document.getElementById("first-player-type");
+					}
+					el.classList.toggle("computer-player");
+					el.classList.toggle("human-player");
+					buttonEl.innerHTML = buttonEl.innerHTML == "Human" ? "Computer" : "Human";
+				}
+			}
 		</script>
-		<div class="history-container-button-box">
-			<button style="width: 47%" onclick="decrementMoveDisplayed()">◀</button>
-			<button style="width: 47%" onclick="incrementMoveDisplayed()">▶</button>
+	</head>
+	<body id="body">
+		<h1 id="title">🅂🅀🅄🄰🅁🄴 🄶🄰🄼🄴</h1>
+		<p id="about">Made for Northeastern University CS 1800 - Discrete Structures - v0.0.0.1</p>
+		<!-- <div class="no-show-midgame" id="mode-selector-container">
+			<button class="mode-selector" id="mode-pp" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,false);">You vs Friend</button>
+			<button class="mode-selector selected-mode" id="mode-pc" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,true);">You vs Computer</button>
+			<button class="mode-selector" id="mode-pc" onclick="makeElSelected(this);setPlayer(1,true);setPlayer(2,true);">Computer vs Computer</button>
+		</div> -->
+		<div id="players-container">
+			<button id="first-player-type" onclick="togglePlayerType(1)">Human</button>
+			<div id="first-player-container">
+				<p contenteditable id="first-player" class="human-player">First Player</p>
+			</div>
+			<div id="vs">vs</div>
+			<button id="second-player-type" onclick="togglePlayerType(2)">Computer</button>
+			<div id="second-player-container">
+				<p contenteditable class="computer-player" id="second-player">Second Player</p>
+			</div>
 		</div>
-		<div id="history-container"></div>
-		<button id="start-game" onclick="startGame()">Start Game!</button>
-		<button id="reset" class="phase one" onclick="setHiddenState(0);">Play Again!</button>
+		<div class="no-show-midgame">
+			<label>Rows: <input type="number" id="row-qty" min="1" /> <button onclick="setRandomRowQty()">Randomize</button></label>
+			<br />
+			<fieldset>
+				<legend>Show:</legend>
+				<label hidden><input type="checkbox" hidden checked id="show-squares" />Squares</label>
+				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-binary" />Binary</label>
+				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-xor" />XOR</label>
+				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-decimal" />Decimal</label>
+			</fieldset>
+			<button onclick="initBoard()">Generate Board</button>
+		</div>
+
+		<div id="gameboard-container"></div>
+		<div class="history-container-button-box">
+			<button style="width: 51px" onclick="decrementMoveDisplayed()">◀</button>
+			<button style="width: 51px" onclick="incrementMoveDisplayed()">▶</button>
+		</div>
+		<div id="history-container" class="hidden"></div>
+		<button id="start-game" onclick="startOrReset()">Start Game!</button>
+		<button id="reset" class="hidden">Play Again!</button>
+		<script>
+			makeElSelected(document.getElementById("mode-pc"));
+			setPlayer(1, false);
+			setPlayer(2, true);
+			setRandomRowQty();
+			//initBoard();
+		</script>
 	</body>
 </html>
