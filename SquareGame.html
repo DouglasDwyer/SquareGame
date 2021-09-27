@@ -1,6 +1,11 @@
 <!DOCTYPE html>
+<!-- version 0.1-->
 <html lang="en">
 	<head>
+		<script>
+			// Change this to show the magic number controls.
+			const SHOW_MAGIC = false;
+		</script>
 		<meta charset="utf-8" />
 		<title>Square Game!</title>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -64,17 +69,19 @@
 			#players-container {
 				display: flex;
 				align-content: center;
-				justify-content: center;
+				justify-content: middle;
+				align-items: center;
 				gap: var(--player-separation);
 			}
 			#first-player,
 			#second-player {
-				padding: 5px;
-				width: 100px;
+				width: 100%;
+				height: 100%;
+				line-height: 50px;
 			}
 			#first-player-container,
 			#second-player-container {
-				background-color: #7ba5b5;
+				background-color: #ffffff86;
 				width: 150px;
 				height: 50px;
 				display: flex;
@@ -83,6 +90,7 @@
 				justify-content: center;
 				border-radius: 4px;
 				margin: 3px;
+				overflow: hidden;
 			}
 			#first-player-type,
 			#second-player-type {
@@ -97,6 +105,7 @@
 			#gameboard-container {
 				display: inline-flex;
 				flex-direction: column;
+				min-width: 400px;
 			}
 			.row {
 				display: flex;
@@ -108,6 +117,7 @@
 			}
 			.human-player {
 				font-family: cursive;
+				font-size: 120%;
 			}
 			#history-container {
 				float: right;
@@ -141,7 +151,6 @@
 				border: 1px solid black;
 				margin: 5px;
 			}
-
 			.empty-row-box {
 				background: none;
 				border: none;
@@ -151,22 +160,26 @@
 			}
 			.chopping-block {
 				border-style: dotted;
+				background-color: gray;
 			}
+
 			.active-player {
-				outline: 2px solid green;
+				outline: 3px solid green;
 			}
 			#row-qty {
 				width: 30px;
 				padding: 4px;
 				background-color: transparent;
-				border: 0px solid blue;
+				border-width: 0px;
 				border-bottom: 2px dashed tan;
 				font-family: "Gluten", cursive;
 				color: tan;
 				z-index: 99;
+				text-align: center;
+				font-weight: bold;
 			}
-			#row-qty:focus{
-				outline:none;
+			#row-qty:focus {
+				outline: none;
 			}
 			.edit-row-count {
 				margin: 5px;
@@ -177,11 +190,34 @@
 				display: flex;
 				font-size: xx-large;
 				padding: 1%;
-				margin: 1%;
+				margin: 1% 2%;
 				border-width: 4px 0 4px 0;
 				border-style: solid;
 				align-items: center;
 				font-family: "Staatliches";
+			}
+			.xor {
+				text-align: left;
+				width: 100%;
+			}
+			fieldset{
+				display: flex;
+				align-items: center;
+				gap: 5px;
+				border:none;
+			}
+			fieldset>fieldset{
+				flex-grow:1;
+				flex-basis:1;
+			}
+			fieldset>fieldset{
+				margin:0;
+				padding:0;
+			}
+			fieldset>fieldset:first-of-type{
+				margin-right:5px;
+				padding-right:5px;
+				border-right: 6px double black;
 			}
 		</style>
 		<script>
@@ -485,7 +521,6 @@
 			}
 			function setPlayer(p, isComputer) {
 				const el = document.getElementById(p == 2 ? "second-player" : "first-player");
-				el.innerHTML = (isComputer ? "Computer" : "Human") + " " + p;
 				el.className = "";
 				el.classList.add(isComputer ? "computer-player" : "human-player");
 			}
@@ -504,7 +539,7 @@
 				p2el.className = p1.class;
 			}
 			function setRandomRowQty() {
-				document.getElementById("row-qty").value = getRandomInt(2, 9);
+				document.getElementById("row-qty").value = getRandomInt(2, 7);
 			}
 
 			function startOrReset() {
@@ -574,7 +609,7 @@
 								text = "Current";
 								break;
 							default:
-								text = "Row " + (game.pastMoves[i - 1].rowIndex + 1) + " take " + game.pastMoves[i - 1].squareCount;
+								text = "Row " + (game.pastMoves[i - 1].rowIndex + 1) + ", -" + game.pastMoves[i - 1].squareCount;
 						}
 						const button = document.createElement("button");
 						button.innerHTML = text;
@@ -582,7 +617,7 @@
 							button.style.color = "green";
 							button.style.fontWeight = "bold";
 						} else {
-							button.style.color = i % 2 == 0 ? "red" : "blue";
+							button.style.color = i % 2 == 1 ? "red" : "blue";
 							button.style.fontWeight = "initial";
 						}
 						if (i == game.moveCount) {
@@ -800,33 +835,34 @@
 	</head>
 	<body id="body">
 		<h1 id="title">🅂🅀🅄🄰🅁🄴 🄶🄰🄼🄴</h1>
-		<p id="about">Made for Northeastern University CS 1800 - Discrete Structures - v0.0.0.1</p>
-		<!-- <div class="no-show-midgame" id="mode-selector-container">
-			<button class="mode-selector" id="mode-pp" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,false);">You vs Friend</button>
-			<button class="mode-selector selected-mode" id="mode-pc" onclick="makeElSelected(this);setPlayer(1,false);setPlayer(2,true);">You vs Computer</button>
-			<button class="mode-selector" id="mode-pc" onclick="makeElSelected(this);setPlayer(1,true);setPlayer(2,true);">Computer vs Computer</button>
-		</div> -->
+		<p id="about">Made for Northeastern University CS 1800 - Discrete Structures</p>
 		<div id="players-container">
 			<button id="first-player-type" onclick="togglePlayerType(1)">Human</button>
 			<div id="first-player-container">
-				<p contenteditable id="first-player" class="human-player">First Player</p>
+				<p contenteditable id="first-player" class="human-player">Player 1</p>
 			</div>
-			<div id="vs">vs</div>
+			<div id="vs">&nbsp;VS&nbsp;</div>
 			<button id="second-player-type" onclick="togglePlayerType(2)">Computer</button>
 			<div id="second-player-container">
-				<p contenteditable class="computer-player" id="second-player">Second Player</p>
+				<p contenteditable class="computer-player" id="second-player">Player 2</p>
 			</div>
 		</div>
 		<div class="no-show-midgame">
-			<label>Rows: <input type="number" id="row-qty" min="1" /> <button onclick="setRandomRowQty()">Randomize</button></label>
-			<br />
-			<fieldset>
-				<legend>Show:</legend>
-				<label hidden><input type="checkbox" hidden checked id="show-squares" />Squares</label>
-				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-binary" />Binary</label>
-				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-xor" />XOR</label>
-				<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" checked id="show-decimal" />Decimal</label>
+			<fieldset style="display: inline-flex; padding: 5px 10px 5px 10px">
+				<fieldset>
+					<label>Rows: <input type="number" id="row-qty" min="1" /> <button onclick="setRandomRowQty();initBoard();">Randomize</button></label>
+				</fieldset>
+				<fieldset>
+					Show: &nbsp;
+					<label hidden><input type="checkbox" hidden checked id="show-squares" />Squares</label>
+					<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" id="show-binary" />Binary</label>
+					<div style="width: 5px"></div>
+					<label id="xor-shown-label"><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" id="show-xor" />XOR</label>
+					<div style="width: 5px"></div>
+					<label><input onclick="setBiggestRowCount(board); drawBoard(board, 'provisional');" type="checkbox" id="show-decimal" />Decimal</label>
+				</fieldset>
 			</fieldset>
+			<br />
 			<button onclick="initBoard()">Generate Board</button>
 		</div>
 
@@ -835,15 +871,18 @@
 			<button style="width: 51px" onclick="decrementMoveDisplayed()">◀</button>
 			<button style="width: 51px" onclick="incrementMoveDisplayed()">▶</button>
 		</div>
-		<div id="history-container" class="hidden"></div>
+		<br /><br />
 		<button id="start-game" onclick="startOrReset()">Start Game!</button>
 		<button id="reset" class="hidden">Play Again!</button>
+		<div id="history-container" class="hidden"></div>
 		<script>
-			makeElSelected(document.getElementById("mode-pc"));
+			if (!SHOW_MAGIC) {
+				document.getElementById("xor-shown-label").style.display = "none";
+			}
 			setPlayer(1, false);
 			setPlayer(2, true);
 			setRandomRowQty();
-			//initBoard();
+			initBoard();
 		</script>
 	</body>
 </html>
